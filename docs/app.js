@@ -141,12 +141,12 @@ async function drawBooks(){
 }
 function field(parent,label,value){const l=node("label",label),t=node("textarea");t.value=value||"";l.append(t);parent.append(l);return t}
 function question(q={}){
- const el=node("div");el.className="question";el.dataset.source=q.source||"";
- for(const [key,label] of [["text","题干"],["concept","基本知识点"],["steps","核心思路与步骤"],["answer","参考答案"]])field(el,label,q[key]).dataset.key=key;
+ const el=node("div");el.className="question";el.dataset.source=q.source||"";el.dataset.figure=/^data:image\/png;base64,[a-zA-Z0-9+/=]+$/.test(q.figure||"")?q.figure:"";
+ for(const [key,label] of [["text","题干"],["studentHint","学生版右栏 · 一般性思路"],["concept","教师版 · 知识点"],["steps","核心思路与步骤"],["answer","参考答案"]])field(el,label,q[key]).dataset.key=key;
  el.append(button("移除此题",()=>{el.remove();dirty=true}));$("questions").append(el);dirty=true;
 }
 function contents(){return {title:$("title").value,knowledge:$("knowledge").value,record:$("record").value,
- questions:[...document.querySelectorAll(".question")].map(el=>({...Object.fromEntries([...el.querySelectorAll("textarea")].map(t=>[t.dataset.key,t.value])),source:el.dataset.source}))}}
+ questions:[...document.querySelectorAll(".question")].map(el=>({...Object.fromEntries([...el.querySelectorAll("textarea")].map(t=>[t.dataset.key,t.value])),source:el.dataset.source,figure:el.dataset.figure}))}}
 async function loadWeek(){
  if(dirty&&!confirm("重新读取会覆盖尚未保存的修改，继续吗？"))return;
  const wk=monday(document.querySelector("#lessons .week").value);
@@ -171,15 +171,23 @@ async function loadWeek(){
 }
 bind("load",loadWeek);bind("add",()=>question());$("draft").oninput=()=>dirty=true;
 bind("save",async()=>{revision=await writeNote(noteWeek,revision,contents());dirty=false;tell("已保存至 "+noteWeek+" 这周")});
-bind("print",()=>{
- const d=contents(),p=$("paper");p.replaceChildren(node("small","高一数学　／　"+noteWeek+" 当周"),node("h1",d.title));
- if(d.knowledge)p.append(node("h2","知识梳理"),node("p",d.knowledge));
- if(d.questions.length)p.append(node("h2","本周答疑"));
- d.questions.forEach((q,i)=>{const pair=node("div"),cols=node("div"),left=node("div",q.text),right=node("div");
- pair.className="pair";cols.className="columns";left.className="problem";right.className="steps";right.append(node("b","基本知识点"),node("p",q.concept),node("b","核心思路与步骤"),node("p",q.steps));cols.append(left,right);pair.append(node("h3","题 "+(i+1)),cols);p.append(pair)});
- if(d.questions.some(q=>q.answer)){const a=node("section");a.className="answers";a.append(node("h2","参考答案"));d.questions.forEach((q,i)=>{if(q.answer)a.append(node("p",(i+1)+". "+q.answer))});p.append(a)}
- window.print();
-});
+async function printHandout(teacherEdition){
+ const d=contents(),paper=$("paper");
+ paper.replaceChildren(node("small",(teacherEdition?"教师版":"学生版")+"　／　"+noteWeek+" 当周"),node("h1",d.title));
+ if(teacherEdition && d.knowledge)paper.append(node("h2","知识梳理"),node("p",d.knowledge));
+ const figures=[];
+ for(const [i,q] of d.questions.entries()){
+  const pair=node("section"),cols=node("div"),left=node("div",q.text),right=node("div");
+  pair.className="pair";cols.className="columns";left.className="problem";right.className="steps";
+  if(q.figure){const image=node("img");image.alt="题目配图";image.src=q.figure;left.append(image);figures.push(image.decode())}
+  right.append(node("b","一般性思路"),node("p",q.studentHint));
+  if(teacherEdition)right.append(node("b","讲解与追问"),node("p",[q.concept,q.steps].filter(Boolean).join("\n")),node("b","参考答案"),node("p",q.answer));
+  cols.append(left,right);pair.append(node("h3","题 "+(i+1)),cols);paper.append(pair);
+ }
+ await Promise.all(figures);window.print();
+}
+bind("print",()=>printHandout(false));
+bind("teacherPrint",()=>printHandout(true));
 window.onbeforeunload=e=>{if(dirty){e.preventDefault();e.returnValue=""}};
 (async()=>{
  if(fragment.has("access_token")){session={access_token:fragment.get("access_token"),refresh_token:fragment.get("refresh_token")};history.replaceState(null,"",location.pathname)}
@@ -213,4 +221,5 @@ function drawFunctionChart(){
  c.fillStyle="#c0d8ff";c.fillText("y = log₂ x",X(3.7),Y(1.3));
 }
 drawFunctionChart();
+
 

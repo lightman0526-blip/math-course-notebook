@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
-<title>高一数学 · 课程手册</title><link rel="stylesheet" href="style.css?v=3"><script defer src="ocr/tesseract.min.js"></script><script defer src="app.js?v=3"></script>
+<title>高一数学 · 课程手册</title><link rel="stylesheet" href="style.css?v=4"><script defer src="ocr/tesseract.min.js"></script><script defer src="app.js?v=4"></script>
 </head><body>
 <header><div class="mast"><b class="brand"><i aria-hidden="true">ƒ</i> 数学课程手册</b><nav aria-label="课程导航"><button data-page="upload">课前交题</button><button data-page="books">教材与进度</button><button data-page="lessons">讲义与课后记录</button></nav></div></header>
 <main>
@@ -14,5 +14,6 @@
 <section id="lessons" hidden><div class="pageTitle"><small>教师工作区　/　高一数学</small><h1>讲义与课后记录</h1></div>
 <div id="editor" hidden><div class="weekBar"><div><label>上课日期<input type="date" class="week"></label><p class="weekLabel"></p></div><button id="load">读取该周资料</button></div>
 <article id="draft" hidden><details class="card"><summary>家长提交的照片</summary><div id="intake"></div></details><div class="card"><label>讲义标题<input id="title"></label><label>知识梳理<textarea id="knowledge"></textarea></label></div>
-<h2>本周答疑</h2><div id="questions"></div><button id="add">添加题目</button><div class="card"><label>课后记录<textarea id="record"></textarea></label></div><div class="actions"><button id="save">保存讲义与记录</button> <button id="print">打印讲义</button></div></article></div></section>
+<h2>本周答疑</h2><div id="questions"></div><button id="add">添加题目</button><div class="card"><label>课后记录<textarea id="record"></textarea></label></div><div class="actions"><button id="save">保存讲义与记录</button> <button id="print">打印学生版</button> <button id="teacherPrint">打印教师版</button></div></article></div></section>
 <aside id="auth" hidden><h2>教师登录</h2><form id="loginForm"><label>教师邮箱<input id="email" type="email" autocomplete="email" required></label><label>邮件中的登录链接或验证码<input id="otp" type="password" autocomplete="one-time-code"><small>复制邮件中登录按钮的链接，粘贴到此处。</small></label><button type="button" id="mail">发送登录邮件</button> <button>验证并登录</button><details><summary>使用教师账号密码</summary><label>密码<input type="password" id="password" autocomplete="current-password"></label><button type="button" id="passwordLogin">密码登录</button></details></form><button hidden id="logout">退出教师账号</button></aside><p id="status" role="status"></p></main><div id="paper"></div></body></html>
+
