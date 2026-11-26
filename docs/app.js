@@ -85,7 +85,7 @@ bind("send",async()=>{
   }catch(e){$("receipt").textContent+="未收　"+file.name+" · "+e.message+"\n"}
  }
  $("receipt").textContent+=wk+" 这周已收到 "+ok+" / "+files.length+" 张。";
- if(ok===files.length)$("images").value="";
+ if(ok===files.length){$("images").value="";$("images").dispatchEvent(new Event("change"))}
 });
 bind("mail",async()=>{if(!$("email").reportValidity())return;
  await request("/auth/v1/otp?redirect_to="+encodeURIComponent(location.href.split("#")[0]),{method:"POST",anon:true,body:{email:$("email").value.trim(),create_user:true}});
@@ -192,4 +192,25 @@ bind("passwordLogin",async()=>{
  $("password").value="";await checkTeacher();
 });
 
+
+$("images").addEventListener("change",()=>{
+ const count=$("images").files.length;
+ $("fileChoice").textContent=count?"已选择 "+count+" 张照片":"可多选 · JPG、PNG 或 WebP · 每张 8 MB 以内";
+});
+function drawFunctionChart(){
+ const c=$("curves").getContext("2d");
+ const X=x=>180+82*x, Y=y=>360-82*y;
+ function line(points,color,width){
+  c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(X(x),Y(y)):c.moveTo(X(x),Y(y)));
+  c.strokeStyle=color;c.lineWidth=width;c.stroke();
+ }
+ for(let i=-2;i<=7;i++){line([[i,-2],[i,5]],"#ffffff1b",1);line([[-3,i],[7,i]],"#ffffff1b",1)}
+ line([[-3,0],[7,0]],"#bfd3f0",2);line([[0,-2],[0,5]],"#bfd3f0",2);
+ c.setLineDash([7,9]);line([[-2,-2],[5,5]],"#b1c8ee99",2);c.setLineDash([]);
+ const exp=[],log=[];for(let i=-200;i<=340;i++){const x=i/50;exp.push([x,2**x]);if(x>0)log.push([x,Math.log2(x)])}
+ line(exp,"#ffffff",4);line(log,"#98bfff",4);
+ c.font="italic 32px Georgia";c.fillStyle="white";c.fillText("y = 2ˣ",X(.12),Y(3.3));
+ c.fillStyle="#c0d8ff";c.fillText("y = log₂ x",X(3.7),Y(1.3));
+}
+drawFunctionChart();
 
