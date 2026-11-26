@@ -24,3 +24,8 @@ textarea{min-height:96px;line-height:1.8;resize:vertical}.question textarea{fiel
 @media print{body{background:white;color:#1b2940;font:11pt/1.6 SimSun,serif}header,main{display:none}#paper{display:block!important;white-space:pre-wrap}#paper h1{font-size:24pt}#paper h2{font-size:15pt}#paper h3{background:#e9eff8;padding:5pt}.pair{break-inside:avoid}.columns{display:grid;grid-template-columns:1fr 1fr;gap:9pt;align-items:start}.problem{border:1px solid #9daec9;padding:8pt;min-height:46mm}.steps{background:#f0f4fc;padding:8pt}.steps b{color:#234884}.answers{break-before:page}*{print-color-adjust:exact}}
 #paper img{display:block;width:100%;height:auto;margin:8px 0}
 @media print{.problem{white-space:pre-wrap;padding-bottom:14mm}.steps p{color:#213554}}
+#photoQueue{list-style:none;margin:10px 0;padding:0;max-height:300px;overflow:auto}
+#photoQueue li{display:flex;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line);padding:8px 0;font-size:.91rem}
+#photoQueue li span{flex:1 1 120px;overflow-wrap:anywhere}
+#photoQueue li small{font-size:.83rem}
+#photoQueue li button,#clearQueue{font-size:.85rem;padding:5px 10px;background:#edf3ff;color:#245396}

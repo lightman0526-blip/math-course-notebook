@@ -64,50 +64,96 @@ async function preparationImage(file){
  }finally{bitmap.close()}
 }
 const family=()=>sessionStorage.getItem("familyLink");
-$("receipt").textContent=family()?"":"请使用老师提供的家庭专属链接交题。";
-$("send").disabled=!family();
-bind("send",async()=>{
- const wk=monday(document.querySelector("#upload .week").value);
- const files=[...$("images").files];if(!files.length)throw Error("请先选择照片");
- $("receipt").textContent="";
- let ok=0;
- for(const file of files){
-  try{
-   const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[file.type];
-   if(!ext||!file.size||file.size>8388608)throw Error("请选择 8 MB 以内的 JPG、PNG 或 WebP");
-   const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",await file.arrayBuffer())),n=>n.toString(16).padStart(2,"0")).join("");
-   try{await request("/storage/v1/object/course-photos/photos/"+wk+"/"+family()+"_"+hash+"."+ext,{method:"POST",raw:file,headers:{"Content-Type":file.type},anon:true})}
-   catch(e){if(e.code!=="Duplicate"&&!/already exists/i.test(e.message))throw e}
-   const preview=await preparationImage(file);
-   try{await request("/rest/v1/prep_images",{method:"POST",anon:true,headers:{"x-family-link":family(),Prefer:"return=minimal"},body:{week:wk,fingerprint:hash,preview}})}
-   catch(e){if(e.status!==409)throw Error("原图已收，备课图待同步。请重试同一张照片。")}
-   $("receipt").textContent+="已收　"+file.name+"\n";ok++;
-  }catch(e){$("receipt").textContent+="未收　"+file.name+" · "+e.message+"\n"}
+const pending=[];
+let uploading=false;
+let selectedWeek="";
+const familyDate=document.querySelector("#upload .week");
+const allowedPhotos={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"};
+function drawQueue(){
+ const list=$("photoQueue");
+ list.replaceChildren();
+ for(const item of pending){
+  const li=node("li");
+  li.append(node("span",item.file.name),node("small",item.status));
+  if(!uploading && !item.sent){
+   li.append(button("移除",()=>{
+    pending.splice(pending.indexOf(item),1);
+    if(!pending.length)selectedWeek="";
+    drawQueue();
+   }));
+  }
+  list.append(li);
  }
- $("receipt").textContent+=wk+" 这周已收到 "+ok+" / "+files.length+" 张。";
- if(ok===files.length){$("images").value="";$("images").dispatchEvent(new Event("change"))}
+ const unsent=pending.filter(item=>!item.sent).length;
+ $("fileChoice").textContent=pending.length?"已选择 "+pending.length+" 张 · 可继续追加":"可连续追加多批 · JPG、PNG、WebP · 每张最多 8 MB";
+ $("send").textContent=uploading?"正在上传…":unsent?"上传待提交的 "+unsent+" 张照片":"批量上传";
+ $("send").disabled=!family()||uploading||unsent===0;
+ $("images").disabled=uploading;
+ $("clearQueue").hidden=!pending.length;
+ $("clearQueue").disabled=uploading;
+ familyDate.disabled=uploading||!!selectedWeek;
+}
+$("images").addEventListener("change",()=>{
+ for(const file of $("images").files)pending.push({file,status:"待上传",sent:false});
+ $("images").value="";
+ if(family())$("receipt").textContent="";
+ drawQueue();
 });
-bind("mail",async()=>{if(!$("email").reportValidity())return;
- await request("/auth/v1/otp?redirect_to="+encodeURIComponent(location.href.split("#")[0]),{method:"POST",anon:true,body:{email:$("email").value.trim(),create_user:true}});
- tell("请复制最新邮件中登录按钮的链接，粘贴在此页验证。")});
-$("loginForm").onsubmit=e=>{e.preventDefault();run(e.submitter,async()=>{
- const value=$("otp").value.trim();
- let body;
- if(/^https:\/\//i.test(value)){
-   const link=new URL(value);
-   if(link.origin!==BASE||link.pathname!=="/auth/v1/verify")throw Error("请复制原始登录邮件中的验证链接");
-   const token_hash=link.searchParams.get("token")||link.searchParams.get("token_hash");
-   const type=link.searchParams.get("type");
-   if(!token_hash||!["email","signup","magiclink"].includes(type))throw Error("这不是完整的登录链接");
-   body={token_hash,type};
- }else{
-   if(!/^\d{6,10}$/.test(value))throw Error("请粘贴邮件登录链接，或输入邮件里的数字验证码");
-   body={email:$("email").value.trim(),token:value,type:"email"};
+$("clearQueue").onclick=()=>{
+ pending.length=0;selectedWeek="";drawQueue();
+ if(family())$("receipt").textContent="";
+};
+async function sendPhoto(file,week){
+ const ext=allowedPhotos[file.type];
+ if(!ext||!file.size||file.size>8388608)throw Error("请选择 8 MB 以内的 JPG、PNG 或 WebP");
+ const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",await file.arrayBuffer())),n=>n.toString(16).padStart(2,"0")).join("");
+ const preview=await preparationImage(file);
+ try{
+  await request("/storage/v1/object/course-photos/photos/"+week+"/"+family()+"_"+hash+"."+ext,{method:"POST",raw:file,headers:{"Content-Type":file.type},anon:true});
+ }catch(e){if(e.code!=="Duplicate" && e.status!==409 && !/already exists/i.test(e.message))throw e}
+ try{
+  await request("/rest/v1/prep_images",{method:"POST",anon:true,headers:{"x-family-link":family(),Prefer:"return=minimal"},body:{week,fingerprint:hash,preview}});
+ }catch(e){if(e.status!==409)throw Error("原图已收，备课图待同步，请重试")}
+}
+$("send").onclick=async()=>{
+ if(uploading||!family()||!pending.some(item=>!item.sent))return;
+ if(!familyDate.value){tell("请选择上课日期");return}
+ selectedWeek=selectedWeek||monday(familyDate.value);
+ uploading=true;tell("");drawQueue();
+ try{
+  for(const item of pending.filter(photo=>!photo.sent)){
+   item.status="上传中";drawQueue();
+   try{await sendPhoto(item.file,selectedWeek);item.sent=true;item.status="已收到"}
+   catch(e){item.status="待处理 · "+e.message}
+   $("receipt").textContent="已收到 "+pending.filter(photo=>photo.sent).length+" / "+pending.length+" 张。";
+  }
+ }finally{
+  uploading=false;drawQueue();
+  $("receipt").textContent+=pending.some(item=>!item.sent)?" 请检查待处理项后再次上传。":" 已归入 "+selectedWeek+" 开始的一周。";
  }
- try{session=await request("/auth/v1/verify",{method:"POST",anon:true,body})}
- catch(err){if(/expired|invalid/i.test(err.message))throw Error("这封邮件已失效。请发送新邮件并复制其中的链接，再回来验证。");throw err}
- $("otp").value="";
- await checkTeacher();})};
+};
+$("receipt").textContent=family()?"":"请使用老师提供的家庭专属链接交题。";
+drawQueue();
+$("loginForm").onsubmit=event=>{
+ event.preventDefault();
+ const submit=$("passwordLogin");
+ if(submit.disabled)return;
+ run(submit,async()=>{
+  const username=$("username").value.trim().toLowerCase();
+  if(!/^[a-z0-9._-]+$/.test(username))throw Error("请输入教师账号。");
+  try{
+   session=await request("/auth/v1/token?grant_type=password",{method:"POST",anon:true,body:{
+    email:username+"@mails.tsinghua.edu.cn",password:$("password").value
+   }});
+  }catch(error){
+   if(error.status===400)throw Error("账号或密码有误，请重新输入。");
+   if(error.status===429)throw Error("登录尝试过于频繁，请稍后再试。");
+   throw error;
+  }
+  $("password").value="";
+  await checkTeacher();
+ });
+};
 async function checkTeacher(){
  const role=await request("/rest/v1/rpc/course_role",{method:"POST",body:{}});
  if(role!=="teacher"){session=null;sessionStorage.removeItem("teacherSession");throw Error("该账号没有教师权限")}
@@ -190,21 +236,14 @@ bind("print",()=>printHandout(false));
 bind("teacherPrint",()=>printHandout(true));
 window.onbeforeunload=e=>{if(dirty){e.preventDefault();e.returnValue=""}};
 (async()=>{
- if(fragment.has("access_token")){session={access_token:fragment.get("access_token"),refresh_token:fragment.get("refresh_token")};history.replaceState(null,"",location.pathname)}
+ if(fragment.has("access_token")||fragment.has("error"))history.replaceState(null,"",location.pathname+location.search);
  page(new URLSearchParams(location.search).has("teacher")?"lessons":"upload");await drawBooks();
  if(session){try{if(session.refresh_token)session=await request("/auth/v1/token?grant_type=refresh_token",{method:"POST",anon:true,body:{refresh_token:session.refresh_token}});await checkTeacher()}catch(e){session=null;sessionStorage.removeItem("teacherSession");page("lessons");tell("请重新登录教师账号。")}}
 })().catch(e=>tell(e.message));
 
-bind("passwordLogin",async()=>{
- session=await request("/auth/v1/token?grant_type=password",{method:"POST",anon:true,body:{email:$("email").value.trim(),password:$("password").value}});
- $("password").value="";await checkTeacher();
-});
 
 
-$("images").addEventListener("change",()=>{
- const count=$("images").files.length;
- $("fileChoice").textContent=count?"已选择 "+count+" 张照片":"可多选 · JPG、PNG 或 WebP · 每张 8 MB 以内";
-});
+
 function drawFunctionChart(){
  const c=$("curves").getContext("2d");
  const X=x=>180+82*x, Y=y=>360-82*y;
@@ -221,5 +260,7 @@ function drawFunctionChart(){
  c.fillStyle="#c0d8ff";c.fillText("y = log₂ x",X(3.7),Y(1.3));
 }
 drawFunctionChart();
+
+
 
 
