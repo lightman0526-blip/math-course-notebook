@@ -22,6 +22,7 @@ function starter(id,week,old){
   "\\begin{center}{\\Large\\bfseries "+texEscape(old.title||"高一数学周讲义")+"}\\par "+week+"\\quad "+editionLabel(id)+"\\end{center}",
   "\\section*{第一部分\\quad 作业答疑}",
   qs || "% 在此录入本周题目及本版本的旁注。",
+  "% end-weekly-questions",
   "\\clearpage",
   "\\section*{第二部分\\quad 知识梳理}",
   "% 按教材小节组织定义、命题与证明。练习与作业答疑沿用本版本的旁注格式。",
@@ -128,7 +129,11 @@ async function loadPhotos(wk){
    try{
     const {data}=await worker.recognize(url);
     if(noteWeek!==wk||target!==drafts[edition])throw Error("稿件已切换，请重新选择照片。");
-    const marker="\\end{document}",pos=target.source.lastIndexOf(marker);
+    let marker="% end-weekly-questions",pos=target.source.indexOf(marker);
+    if(pos<0 && target.source.includes("第二部分") && target.source.includes("知识梳理")){
+     pos=target.source.indexOf("\\newgeometry{");
+    }
+    if(pos<0){marker="\\end{document}";pos=target.source.lastIndexOf(marker)}
     if(pos<0)throw Error("缺少 "+marker);
     target.source=target.source.slice(0,pos)+"\\par\n"+texEscape(data.text.trim())+"\n"+target.source.slice(pos);
     $("texSource").value=target.source;$("texSource").dispatchEvent(new Event("input"));tell("已插入识别文字，请核对公式。");
