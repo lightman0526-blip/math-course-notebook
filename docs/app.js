@@ -157,7 +157,7 @@ $("loginForm").onsubmit=event=>{
 async function checkTeacher(){
  const role=await request("/rest/v1/rpc/course_role",{method:"POST",body:{}});
  if(role!=="teacher"){session=null;sessionStorage.removeItem("teacherSession");throw Error("该账号没有教师权限")}
- teacher=true;sessionStorage.setItem("teacherSession",JSON.stringify(session));page(current==="upload"?"lessons":current);await drawBooks();
+ teacher=true;sessionStorage.setItem("teacherSession",JSON.stringify(session));page(current==="upload"?"lessons":current);await drawBooks();if(current==="lessons")await loadManuscript();
 }
 bind("logout",async()=>{await request("/auth/v1/logout",{method:"POST"});sessionStorage.removeItem("teacherSession");location.reload()});
 async function readNote(id){return (await request("/rest/v1/course_notes?id=eq."+id))[0]||{body:{},revision:0}}
@@ -185,55 +185,6 @@ async function drawBooks(){
  if(teacher)card.append(button("阅读教材",async()=>{const a=node("a","打开 PDF（10 分钟内有效）");a.href=await signed("course-files","books/14702fcb6c444b10b6c1036d9368f814/"+key+".pdf");a.target="_blank";a.rel="noreferrer";card.append(a);a.click()}));
  $("library").append(card)}
 }
-function field(parent,label,value){const l=node("label",label),t=node("textarea");t.value=value||"";l.append(t);parent.append(l);return t}
-function question(q={}){
- const el=node("div");el.className="question";el.dataset.source=q.source||"";el.dataset.figure=/^data:image\/png;base64,[a-zA-Z0-9+/=]+$/.test(q.figure||"")?q.figure:"";
- for(const [key,label] of [["text","题干"],["studentHint","学生版右栏 · 一般性思路"],["concept","教师版 · 知识点"],["steps","核心思路与步骤"],["answer","参考答案"]])field(el,label,q[key]).dataset.key=key;
- el.append(button("移除此题",()=>{el.remove();dirty=true}));$("questions").append(el);dirty=true;
-}
-function contents(){return {title:$("title").value,knowledge:$("knowledge").value,record:$("record").value,
- questions:[...document.querySelectorAll(".question")].map(el=>({...Object.fromEntries([...el.querySelectorAll("textarea")].map(t=>[t.dataset.key,t.value])),source:el.dataset.source,figure:el.dataset.figure}))}}
-async function loadWeek(){
- if(dirty&&!confirm("重新读取会覆盖尚未保存的修改，继续吗？"))return;
- const wk=monday(document.querySelector("#lessons .week").value);
- const doc=await readNote(wk);const files=[];
- for(let offset=0;;offset+=100){const batch=await request("/storage/v1/object/list/course-photos",{method:"POST",body:{prefix:"photos/"+wk,limit:100,offset,sortBy:{column:"created_at",order:"asc"}}});
- files.push(...batch);if(batch.length<100)break}
- noteWeek=wk;revision=doc.revision;$("title").value=doc.body.title||"高一数学周讲义";$("knowledge").value=doc.body.knowledge||"";$("record").value=doc.body.record||"";
- $("intake").replaceChildren();$("questions").replaceChildren();$("draft").hidden=false;
- if(!files.length)$("intake").append(node("p","这周还没有收到照片。"));
- for(const [i,x] of files.entries()){
-  const path="photos/"+wk+"/"+x.name, box=node("div");box.className="photo";box.append(node("b","照片 "+(i+1)));
-  const img=node("img");img.alt="家长提交的第 "+(i+1)+" 张照片";img.loading="lazy";box.append(img);
-  box.append(button("识别并加入答疑",async()=>{
-   tell("正在读取中文与数学符号，请稍候……");const url=await signed("course-photos",path);
-   const worker=await Tesseract.createWorker("chi_sim+eng",1,{workerPath:new URL("ocr/worker.min.js",document.baseURI).href,corePath:new URL("ocr/tesseract-core-lstm.wasm.js",document.baseURI).href,langPath:new URL("ocr",document.baseURI).href,workerBlobURL:false});
-   try{const {data}=await worker.recognize(url);question({source:path,text:data.text.trim()});tell("已加入一题。请对照照片核对指数、根号、分数和图形条件。")}finally{await worker.terminate()}
-  }),button("手动录入此题",()=>question({source:path})));
-  $("intake").append(box);img.src=await signed("course-photos",path);
- }
- for(const q of doc.body.questions||[])question(q);
- dirty=false;tell("已读取 "+wk+" 这周的资料");
-}
-bind("load",loadWeek);bind("add",()=>question());$("draft").oninput=()=>dirty=true;
-bind("save",async()=>{revision=await writeNote(noteWeek,revision,contents());dirty=false;tell("已保存至 "+noteWeek+" 这周")});
-async function printHandout(teacherEdition){
- const d=contents(),paper=$("paper");
- paper.replaceChildren(node("small",(teacherEdition?"教师版":"学生版")+"　／　"+noteWeek+" 当周"),node("h1",d.title));
- if(teacherEdition && d.knowledge)paper.append(node("h2","知识梳理"),node("p",d.knowledge));
- const figures=[];
- for(const [i,q] of d.questions.entries()){
-  const pair=node("section"),cols=node("div"),left=node("div",q.text),right=node("div");
-  pair.className="pair";cols.className="columns";left.className="problem";right.className="steps";
-  if(q.figure){const image=node("img");image.alt="题目配图";image.src=q.figure;left.append(image);figures.push(image.decode())}
-  right.append(node("b","一般性思路"),node("p",q.studentHint));
-  if(teacherEdition)right.append(node("b","讲解与追问"),node("p",[q.concept,q.steps].filter(Boolean).join("\n")),node("b","参考答案"),node("p",q.answer));
-  cols.append(left,right);pair.append(node("h3","题 "+(i+1)),cols);paper.append(pair);
- }
- await Promise.all(figures);window.print();
-}
-bind("print",()=>printHandout(false));
-bind("teacherPrint",()=>printHandout(true));
 window.onbeforeunload=e=>{if(dirty){e.preventDefault();e.returnValue=""}};
 (async()=>{
  if(fragment.has("access_token")||fragment.has("error"))history.replaceState(null,"",location.pathname+location.search);
@@ -260,6 +211,7 @@ function drawFunctionChart(){
  c.fillStyle="#c0d8ff";c.fillText("y = log₂ x",X(3.7),Y(1.3));
 }
 drawFunctionChart();
+
 
 
 

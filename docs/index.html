@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
-<title>高一数学 · 课程手册</title><link rel="stylesheet" href="style.css?v=5"><script defer src="ocr/tesseract.min.js"></script><script defer src="app.js?v=5"></script>
-</head><body>
+<title>高一数学 · 课程手册</title><link rel="stylesheet" href="style.css?v=6"><script defer src="ocr/tesseract.min.js"></script><script defer src="app.js?v=6"></script>
+<script defer src="manuscript.js?v=1"></script></head><body>
 <header><div class="mast"><b class="brand"><i aria-hidden="true">ƒ</i> 数学课程手册</b><nav aria-label="课程导航"><button data-page="upload">课前交题</button><button data-page="books">教材与进度</button><button data-page="lessons">讲义与课后记录</button></nav></div></header>
 <main>
 <section id="upload"><div class="spread">
@@ -13,13 +13,23 @@
 <section id="books" hidden><div class="pageTitle"><small>教学资料　/　高一上学期</small><h1>教材与进度</h1></div><div class="bookLayout"><div><h2>学期教学顺序</h2><div id="topics" class="card"></div></div><div><h2>人教 B 版教材</h2><p>教师登录后可阅读原书。</p><div id="library"></div></div></div></section>
 <section id="lessons" hidden><div class="pageTitle"><small>教师工作区　/　高一数学</small><h1>讲义与课后记录</h1></div>
 <div id="editor" hidden><div class="weekBar"><div><label>上课日期<input type="date" class="week"></label><p class="weekLabel"></p></div><button id="load">读取该周资料</button></div>
-<article id="draft" hidden><details class="card"><summary>家长提交的照片</summary><div id="intake"></div></details><div class="card"><label>讲义标题<input id="title"></label><label>知识梳理<textarea id="knowledge"></textarea></label></div>
-<h2>本周答疑</h2><div id="questions"></div><button id="add">添加题目</button><div class="card"><label>课后记录<textarea id="record"></textarea></label></div><div class="actions"><button id="save">保存讲义与记录</button> <button id="print">打印学生版</button> <button id="teacherPrint">打印教师版</button></div></article></div></section>
+<article id="draft" hidden>
+<div class="deskTools"><div class="editions" aria-label="选择讲义版本"><button id="editionStudent" type="button">学生版</button><button id="editionTeacher" type="button">教师版</button></div><button id="save">保存修改</button></div>
+<div class="texDesk">
+<section class="manuscript"><div class="paneHead"><h2>稿件源文件</h2><button id="getTex">下载 .tex</button></div><div class="paneMeta"><span id="filename"></span></div><textarea id="texSource" aria-label="LaTeX 源文件" autocomplete="off" spellcheck="false"></textarea></section>
+<section class="proof"><div class="paneHead"><h2>PDF 预览</h2><button id="getPdf">下载 PDF</button></div><div class="paneMeta"><span id="compileState" role="status"></span><label><input type="checkbox" id="autoCompile" checked>自动编译</label><button id="compile">编译</button></div><p id="emptyPdf">编译后在这里预览。</p><div id="pdfControls" hidden><button id="prevPage" aria-label="上一页">‹</button><output id="pageCount"></output><button id="nextPage" aria-label="下一页">›</button><button id="zoomOut" aria-label="缩小">−</button><button id="zoomIn" aria-label="放大">＋</button></div><div id="pdfView" aria-label="讲义 PDF 页面" hidden></div></section>
+</div>
+<pre id="compileError" hidden></pre>
+<details class="fold"><summary>家长提交的照片</summary><div id="intake"></div></details>
+<details class="fold"><summary>课后记录</summary><textarea id="record" aria-label="课后记录"></textarea></details>
+</article></div></section>
 <aside id="auth" hidden><h2>教师登录</h2><form id="loginForm">
 <label>教师账号<input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
 <label>密码<input id="password" name="password" type="password" autocomplete="current-password" required></label>
 <button id="passwordLogin" type="submit">登录</button>
-</form><button hidden id="logout">退出教师账号</button></aside><p id="status" role="status"></p></main><div id="paper"></div></body></html>
+</form><button hidden id="logout">退出教师账号</button></aside><p id="status" role="status"></p></main></body></html>
+
+
 
 
 
