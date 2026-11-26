@@ -89,9 +89,24 @@ bind("send",async()=>{
 });
 bind("mail",async()=>{if(!$("email").reportValidity())return;
  await request("/auth/v1/otp?redirect_to="+encodeURIComponent(location.href.split("#")[0]),{method:"POST",anon:true,body:{email:$("email").value.trim(),create_user:true}});
- tell("验证邮件已发送。可使用邮件中的登录链接或验证码。")});
+ tell("请复制最新邮件中登录按钮的链接，粘贴在此页验证。")});
 $("loginForm").onsubmit=e=>{e.preventDefault();run(e.submitter,async()=>{
- session=await request("/auth/v1/verify",{method:"POST",anon:true,body:{email:$("email").value.trim(),token:$("otp").value.trim(),type:"email"}});
+ const value=$("otp").value.trim();
+ let body;
+ if(/^https:\/\//i.test(value)){
+   const link=new URL(value);
+   if(link.origin!==BASE||link.pathname!=="/auth/v1/verify")throw Error("请复制原始登录邮件中的验证链接");
+   const token_hash=link.searchParams.get("token")||link.searchParams.get("token_hash");
+   const type=link.searchParams.get("type");
+   if(!token_hash||!["email","signup","magiclink"].includes(type))throw Error("这不是完整的登录链接");
+   body={token_hash,type};
+ }else{
+   if(!/^\d{6,10}$/.test(value))throw Error("请粘贴邮件登录链接，或输入邮件里的数字验证码");
+   body={email:$("email").value.trim(),token:value,type:"email"};
+ }
+ try{session=await request("/auth/v1/verify",{method:"POST",anon:true,body})}
+ catch(err){if(/expired|invalid/i.test(err.message))throw Error("这封邮件已失效。请发送新邮件并复制其中的链接，再回来验证。");throw err}
+ $("otp").value="";
  await checkTeacher();})};
 async function checkTeacher(){
  const role=await request("/rest/v1/rpc/course_role",{method:"POST",body:{}});
@@ -168,7 +183,7 @@ bind("print",()=>{
 window.onbeforeunload=e=>{if(dirty){e.preventDefault();e.returnValue=""}};
 (async()=>{
  if(fragment.has("access_token")){session={access_token:fragment.get("access_token"),refresh_token:fragment.get("refresh_token")};history.replaceState(null,"",location.pathname)}
- page("upload");await drawBooks();
+ page(new URLSearchParams(location.search).has("teacher")?"lessons":"upload");await drawBooks();
  if(session){try{if(session.refresh_token)session=await request("/auth/v1/token?grant_type=refresh_token",{method:"POST",anon:true,body:{refresh_token:session.refresh_token}});await checkTeacher()}catch(e){session=null;sessionStorage.removeItem("teacherSession");page("lessons");tell("请重新登录教师账号。")}}
 })().catch(e=>tell(e.message));
 
@@ -176,4 +191,5 @@ bind("passwordLogin",async()=>{
  session=await request("/auth/v1/token?grant_type=password",{method:"POST",anon:true,body:{email:$("email").value.trim(),password:$("password").value}});
  $("password").value="";await checkTeacher();
 });
+
 
