@@ -9,9 +9,24 @@ function texEscape(s){
 function starter(id,week,old){
  const qs=(old.questions||[]).map((q,i)=>{
   const side=id==="student"?q.studentHint:[q.concept,q.steps,q.answer].filter(Boolean).join("\n");
-  return "\\section*{题 "+(i+1)+"}\n"+texEscape(q.text)+"\n\\par "+texEscape(side);
+  return "\\paragraph{题 "+(i+1)+"}\\noindent\n"+
+   "\\begin{minipage}[t]{.58\\linewidth}"+texEscape(q.text)+"\\end{minipage}\\hfill\n"+
+   "\\begin{minipage}[t]{.36\\linewidth}\\small\\textbf{"+(id==="student"?"一般性思路":"讲解与追问")+"}\\par "+texEscape(side)+"\\end{minipage}";
  }).join("\n\n");
- return "\\documentclass[11pt,a4paper]{article}\n\\usepackage[margin=20mm]{geometry}\n\\usepackage{xeCJK,amsmath,amssymb}\n\\setCJKmainfont{SimSun}\n\\begin{document}\n\\section*{"+texEscape(old.title||"高一数学周讲义")+"}\n% "+week+" · "+editionLabel(id)+"\n"+qs+"\n\\end{document}\n";
+ return [
+  "\\documentclass[12pt,a4paper]{article}",
+  "\\usepackage[margin=24mm]{geometry}",
+  "\\usepackage{xeCJK,amsmath,amssymb,xcolor}",
+  "\\setCJKmainfont{SimSun}[AutoFakeBold=true]",
+  "\\begin{document}",
+  "\\begin{center}{\\Large\\bfseries "+texEscape(old.title||"高一数学周讲义")+"}\\par "+week+"\\quad "+editionLabel(id)+"\\end{center}",
+  "\\section*{第一部分\\quad 作业答疑}",
+  qs || "% 在此录入本周题目及本版本的旁注。",
+  "\\clearpage",
+  "\\section*{第二部分\\quad 知识梳理}",
+  "% 按教材小节组织定义、命题与证明。练习与作业答疑沿用本版本的旁注格式。",
+  "\\end{document}",""
+ ].join("\n");
 }
 let pdfTask=null,pdfDoc=null,viewerRevision=0,paintRevision=0,pageNumber=1,zoom=1;
 async function renderPage(){
