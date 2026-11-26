@@ -113,6 +113,50 @@ async function loadManuscript(){
  };
  }finally{loadingWeek=false;$("editor").inert=false}
 }
+const photoViewer=$("photoViewer"),photoStage=$("photoStage");
+let photoFiles=[],photoIndex=0,photoLoad=0;
+async function openPhoto(files,index){
+ if(index<0||index>=files.length)return;
+ const load=++photoLoad;
+ photoFiles=files;photoIndex=index;
+ if(!photoViewer.open)photoViewer.showModal();
+ $("photoPosition").textContent="照片 "+(index+1)+" / "+files.length;
+ $("photoPrevious").disabled=index===0;
+ $("photoNext").disabled=index===files.length-1;
+ const notice=$("photoNotice");
+ photoStage.replaceChildren(notice);
+ photoStage.classList.remove("enlarged");photoStage.scrollTo(0,0);
+ $("photoZoom").disabled=true;$("photoZoom").textContent="放大";
+ notice.textContent="正在打开原图…";
+ try{
+  const url=await signed("course-photos","photos/"+noteWeek+"/"+files[index].name);
+  if(load!==photoLoad||!photoViewer.open)return;
+  const original=new Image();
+  original.alt="作业原图 "+(index+1);original.src=url;
+  await original.decode();
+  if(load!==photoLoad||!photoViewer.open)return;
+  notice.textContent="";photoStage.append(original);$("photoZoom").disabled=false;
+ }catch(error){
+  if(load!==photoLoad||!photoViewer.open)return;
+  notice.textContent="原图未能加载。";
+  notice.append(button("重试",()=>openPhoto(files,index)));
+ }
+}
+$("photoPrevious").onclick=()=>openPhoto(photoFiles,photoIndex-1);
+$("photoNext").onclick=()=>openPhoto(photoFiles,photoIndex+1);
+$("photoZoom").onclick=()=>{
+ const enlarged=photoStage.classList.toggle("enlarged");
+ $("photoZoom").textContent=enlarged?"适应窗口":"放大";
+};
+$("photoClose").onclick=()=>photoViewer.close();
+photoViewer.onclose=()=>{
+ ++photoLoad;photoFiles=[];photoStage.replaceChildren($("photoNotice"));
+};
+photoViewer.onkeydown=event=>{
+ if(event.key==="ArrowLeft"||event.key==="ArrowRight"){
+  event.preventDefault();openPhoto(photoFiles,photoIndex+(event.key==="ArrowRight"?1:-1));
+ }
+};
 async function loadPhotos(wk){
  const files=[];for(let offset=0;;offset+=100){
   const batch=await request("/storage/v1/object/list/course-photos",{method:"POST",body:{prefix:"photos/"+wk,limit:100,offset,sortBy:{column:"created_at",order:"asc"}}});
@@ -123,7 +167,10 @@ async function loadPhotos(wk){
  for(const [i,file] of files.entries()){
   const path="photos/"+wk+"/"+file.name,box=node("div");box.className="photo";
   const img=node("img");img.alt="作业照片 "+(i+1);img.loading="lazy";
-  box.append(img,button("识别并插入当前稿",async()=>{
+  const preview=node("button");preview.type="button";preview.className="photoPreview";
+  preview.setAttribute("aria-label","查看第 "+(i+1)+" 张原图");
+  preview.append(img,node("span","查看原图"));preview.onclick=()=>openPhoto(files,i);
+  box.append(preview,button("识别并插入当前稿",async()=>{
    const target=drafts[edition],url=await signed("course-photos",path);
    const worker=await Tesseract.createWorker("chi_sim+eng",1,{workerPath:new URL("ocr/worker.min.js",document.baseURI).href,corePath:new URL("ocr/tesseract-core-lstm.wasm.js",document.baseURI).href,langPath:new URL("ocr",document.baseURI).href,workerBlobURL:false});
    try{

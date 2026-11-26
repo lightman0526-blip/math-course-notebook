@@ -80,3 +80,16 @@ main:has(#editor:not([hidden])):has(#lessons:not([hidden])){max-width:1680px;mar
 #pdfView{height:calc(clamp(400px,64vh,950px) - 34px);overflow:auto;padding:12px;background:#e6eaf0}
 #pdfView canvas{display:block;background:white;margin:0 auto;box-shadow:0 1px 5px #18315030}
 @media(max-width:760px){#pdfView{height:62vh}}
+.photo .photoPreview{display:block;width:100%;margin:0 0 10px;padding:0 0 5px;background:#f5f7fa;color:#294f80;cursor:zoom-in}
+.photoPreview span{font-size:.85rem}
+#photoViewer{width:min(1240px,96vw);height:94vh;height:94dvh;max-width:100%;max-height:100%;padding:0;border:0;border-radius:8px;background:#e6ebf1;color:var(--ink)}
+#photoViewer[open]{display:flex;flex-direction:column}
+#photoViewer::backdrop{background:#101e32c9}
+.photoToolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;padding:8px 14px;background:#fff;border-bottom:1px solid var(--line)}
+.photoToolbar button,#photoNotice button{padding:5px 9px;background:#eff3fa;color:#244d83;margin-left:4px;font-size:.92rem}
+.photoToolbar button:disabled{opacity:.4}
+#photoStage{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain}
+#photoStage img{display:block;width:100%;height:100%;object-fit:contain}
+#photoStage.enlarged img{width:auto;height:auto;max-width:none;max-height:none;min-width:100%;margin:auto}
+#photoNotice:not(:empty){padding:24px;text-align:center}
+@media(max-width:650px){#photoViewer{width:100vw;height:100dvh;border-radius:0}.photoToolbar{padding:6px}.photoToolbar button{padding:4px 6px}}
