@@ -1,0 +1,15 @@
+create table public.course_members(email text primary key, role text not null check (role in ('teacher','family')));
+alter table public.course_members enable row level security;
+revoke all on public.course_members from public, anon, authenticated;
+grant select on public.course_members to authenticated;
+create policy own_membership on public.course_members for select to authenticated using (email=lower((select auth.jwt())->>'email') and not coalesce(((select auth.jwt())->>'is_anonymous')::boolean,false));
+create function public.course_role() returns text language sql stable security invoker set search_path='' as $$ select role from public.course_members where email=lower((select auth.jwt())->>'email') $$;
+revoke all on function public.course_role() from public,anon;
+grant execute on function public.course_role() to authenticated;
+grant select,insert,update on public.course_notes to authenticated;
+create policy teacher_read on public.course_notes for select to authenticated using ((select public.course_role())='teacher');
+create policy teacher_insert on public.course_notes for insert to authenticated with check ((select public.course_role())='teacher' and revision=1);
+create policy teacher_edit on public.course_notes for update to authenticated using ((select public.course_role())='teacher') with check ((select public.course_role())='teacher');
+create policy teacher_files on storage.objects for select to authenticated using(bucket_id='course-files' and (select public.course_role())='teacher');
+create policy submit_photo on storage.objects for insert to authenticated with check(bucket_id='course-files' and (select public.course_role()) in ('family','teacher') and name ~ '^photos/[0-9]{4}-[0-9]{2}-[0-9]{2}/[a-f0-9]{64}[.](png|jpg|webp)$' and metadata->>'mimetype' in ('image/png','image/jpeg','image/webp') and (metadata->>'size')::bigint <= 8388608);
+create policy add_book on storage.objects for insert to authenticated with check(bucket_id='course-files' and (select public.course_role())='teacher' and name ~ '^books/(b[1-4]|s3)[.]pdf$' and metadata->>'mimetype'='application/pdf');
