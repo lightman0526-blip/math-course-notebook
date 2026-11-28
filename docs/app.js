@@ -184,6 +184,28 @@ async function drawBooks(){
  for(const [key,name] of Object.entries(books)){const card=node("div");card.className="card";card.append(node("small","普通高中教科书"),node("h2",name));
  if(teacher)card.append(button("阅读教材",async()=>{const a=node("a","打开 PDF（10 分钟内有效）");a.href=await signed("course-files","books/14702fcb6c444b10b6c1036d9368f814/"+key+".pdf");a.target="_blank";a.rel="noreferrer";card.append(a);a.click()}));
  $("library").append(card)}
+ $("exams").hidden=!teacher;
+ if(teacher)await drawExams();
+}
+async function drawExams(){
+ const catalog=await readNote("exam-library");
+ const list=$("examList");
+ list.replaceChildren();
+ for(const group of catalog.body.groups||[]){
+  list.append(node("h3",group.title));
+  for(const file of group.files){
+   const row=node("div");row.className="row";
+   row.append(node("span",file.title),button(file.path.endsWith(".pdf")?"打开 PDF":"下载 Word",async()=>{
+    const tab=window.open("about:blank","_blank");
+    if(tab)tab.opener=null;
+    try{
+     const url=await signed("exam-library",file.path);
+     if(tab)tab.location.replace(url);else location.assign(url);
+    }catch(error){if(tab)tab.close();throw error}
+   }));
+   list.append(row);
+  }
+ }
 }
 window.onbeforeunload=e=>{if(dirty){e.preventDefault();e.returnValue=""}};
 (async()=>{

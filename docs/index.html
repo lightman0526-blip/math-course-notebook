@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
-<title>高一数学 · 课程手册</title><link rel="stylesheet" href="style.css?v=7"><script defer src="ocr/tesseract.min.js"></script><script defer src="app.js?v=6"></script>
+<title>高一数学 · 课程手册</title><link rel="stylesheet" href="style.css?v=7"><script defer src="ocr/tesseract.min.js"></script><script defer src="app.js?v=7"></script>
 <script defer src="manuscript.js?v=4"></script></head><body>
 <header><div class="mast"><b class="brand"><i aria-hidden="true">ƒ</i> 数学课程手册</b><nav aria-label="课程导航"><button data-page="upload">课前交题</button><button data-page="books">教材与进度</button><button data-page="lessons">讲义与课后记录</button></nav></div></header>
 <main>
@@ -10,7 +10,7 @@
 <div class="submitPanel"><h2>提交作业照片</h2><label>上课日期<input type="date" class="week"></label><p class="weekLabel"></p>
 <label class="fileLabel">题目照片<span class="picker"><strong>批量选择照片</strong><span id="fileChoice">可连续追加多批 · JPG、PNG、WebP · 每张最多 8 MB</span><input id="images" type="file" multiple accept="image/jpeg,image/png,image/webp"></span></label>
 <ul id="photoQueue" aria-label="待提交照片"></ul><button type="button" id="clearQueue" hidden>清空列表</button><button id="send" disabled>批量上传</button><p id="receipt" role="status"></p></div></div></section>
-<section id="books" hidden><div class="pageTitle"><small>教学资料　/　高一上学期</small><h1>教材与进度</h1></div><div class="bookLayout"><div><h2>学期教学顺序</h2><div id="topics" class="card"></div></div><div><h2>人教 B 版教材</h2><p>教师登录后可阅读原书。</p><div id="library"></div></div></div></section>
+<section id="books" hidden><div class="pageTitle"><small>教学资料　/　高一上学期</small><h1>教材与进度</h1></div><div class="bookLayout"><div><h2>学期教学顺序</h2><div id="topics" class="card"></div></div><div><h2>人教 B 版教材</h2><p>教师登录后可阅读原书。</p><div id="library"></div></div></div><section id="exams" hidden><h2>北京高一数学试卷</h2><div id="examList"></div></section></section>
 <section id="lessons" hidden><div class="pageTitle"><small>教师工作区　/　高一数学</small><h1>讲义与课后记录</h1></div>
 <div id="editor" hidden><div class="weekBar"><div><label>上课日期<input type="date" class="week"></label><p class="weekLabel"></p></div><button id="load">读取该周资料</button></div>
 <article id="draft" hidden>
