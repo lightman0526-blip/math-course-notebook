@@ -1,6 +1,5 @@
 "use strict";
-const BASE="https://nuuhhiivnexisrfutchg.supabase.co";
-const APIKEY="sb_publishable_2XezXb0h03fapKVeqZxl1w_Vp5VjZ6f";
+
 const $=id=>document.getElementById(id);
 const node=(tag,text)=>Object.assign(document.createElement(tag),{textContent:text||""});
 const tell=t=>$("status").textContent=t;
@@ -157,7 +156,7 @@ $("loginForm").onsubmit=event=>{
 async function checkTeacher(){
  const role=await request("/rest/v1/rpc/course_role",{method:"POST",body:{}});
  if(role!=="teacher"){session=null;sessionStorage.removeItem("teacherSession");throw Error("该账号没有教师权限")}
- teacher=true;sessionStorage.setItem("teacherSession",JSON.stringify(session));page(current==="upload"?"lessons":current);await drawBooks();if(current==="lessons")await loadManuscript();
+ teacher=true;sessionStorage.setItem("teacherSession",JSON.stringify(session));$("juniorCourse").hidden=false;if(new URLSearchParams(location.search).get("course")==="junior"){location.replace("junior.html?teacher");return}page(current==="upload"?"lessons":current);await drawBooks();if(current==="lessons")await loadManuscript();
 }
 bind("logout",async()=>{await request("/auth/v1/logout",{method:"POST"});sessionStorage.removeItem("teacherSession");location.reload()});
 async function readNote(id){return (await request("/rest/v1/course_notes?id=eq."+id))[0]||{body:{},revision:0}}

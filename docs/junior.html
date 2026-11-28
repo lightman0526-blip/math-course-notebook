@@ -1,0 +1,9 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>小学衔接与初中数学 · 课程手册</title><link rel="stylesheet" href="style.css?v=7"><link rel="stylesheet" href="junior.css"><script defer src="connection.js"></script><script type="module" src="junior.js"></script></head><body>
+<header><div class="mast"><b class="brand"><i aria-hidden="true">ƒ</i> 数学课程手册</b><a id="back" hidden href="./?teacher">返回高一数学</a></div></header>
+<main><h1>小学衔接与初中数学</h1><p id="notice" role="status">正在读取课程资料…</p><div id="materials" hidden>
+<section class="week-panel"><small id="weekLabel"></small><h2>本周练习</h2><div id="weekly"></div></section>
+<details><summary>往期课程</summary><div id="archive"></div></details>
+<details><summary>课程大纲</summary><div id="outlines"></div></details>
+<details id="submit"><summary>交作业照片</summary><form><label>作业日期<input type="date" required id="day"></label><label>作业照片<input type="file" id="photos" multiple required accept="image/jpeg,image/webp,image/png"></label><button>批量上传</button><p id="receipt" role="status"></p></form></details>
+<details hidden id="inbox"><summary>家长提交的照片</summary><div id="photosList"></div></details>
+</div></main><dialog id="preview"><section><b id="caption"></b><button id="close">关闭</button></section><div id="pager"><button id="prev">上一页</button><span id="position"></span><button id="next">下一页</button></div><div id="paper"><canvas></canvas></div></dialog></body></html>
